@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 
@@ -18,7 +19,12 @@ namespace WebApi.Controllers
 
         public HttpResponseMessage DoesNotExist()
         {
-            return ControllerContext.Request.CreateResponse(HttpStatusCode.NotFound);
+            return ControllerContext.Request.CreateResponse(HttpStatusCode.NotFound, "Not Found");
         }
+        public HttpResponseMessage RequestBad(string errMsg)
+        {
+            return ControllerContext.Request.CreateResponse(HttpStatusCode.BadRequest, errMsg);
+        }
+
     }
 }

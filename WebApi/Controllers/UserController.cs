@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 using BusinessEntities;
@@ -36,6 +38,29 @@ namespace WebApi.Controllers
         [HttpPost]
         public HttpResponseMessage UpdateUser(Guid userId, [FromBody] UserModel model)
         {
+            //if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.AnnualSalary.ToString())|| (model.Tags == null || !model.Tags.Any()))
+            //{
+            //    return RequestBad(); 
+            //}
+            var errors = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(model.Email))
+                errors.Add("Email is required.");
+
+            if (!model.AnnualSalary.HasValue || model.AnnualSalary <= 0)
+                errors.Add("Annual Salary must be provided and greater than zero.");
+
+            if (model.Tags == null || !model.Tags.Any())
+                errors.Add("At least one tag must be provided.");
+
+            if (errors.Any())
+            {
+                string errMsg = string.Join(" | ", errors);
+                return RequestBad(errMsg);
+            }
+                
+
+
             var user = _getUserService.GetUser(userId);
             if (user == null)
             {
@@ -89,7 +114,15 @@ namespace WebApi.Controllers
         [HttpGet]
         public HttpResponseMessage GetUsersByTag(string tag)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(tag))
+            {
+                return RequestBad("Tag must be provided.");
+            }
+            var users = _getUserService.GetUsersByTag(tag)
+                                           .Select(q => new UserData(q))
+                                           .ToList();
+            return Found(users);
+
         }
     }
 }

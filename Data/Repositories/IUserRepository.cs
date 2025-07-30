@@ -7,5 +7,6 @@ namespace Data.Repositories
     {
         IEnumerable<User> Get(UserTypes? userType = null, string name = null, string email = null);
         void DeleteAll();
+        IEnumerable<User> GetByTag(string tag);
     }
 }
