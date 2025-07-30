@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using BusinessEntities;
+﻿using BusinessEntities;
+using System.Collections.Generic;
 
 namespace WebApi.Models.Users
 {

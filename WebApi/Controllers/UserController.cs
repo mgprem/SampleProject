@@ -38,10 +38,7 @@ namespace WebApi.Controllers
         [HttpPost]
         public HttpResponseMessage UpdateUser(Guid userId, [FromBody] UserModel model)
         {
-            //if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.AnnualSalary.ToString())|| (model.Tags == null || !model.Tags.Any()))
-            //{
-            //    return RequestBad(); 
-            //}
+
             var errors = new List<string>();
 
             if (string.IsNullOrWhiteSpace(model.Email))
