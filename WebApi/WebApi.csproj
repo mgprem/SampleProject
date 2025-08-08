@@ -181,6 +181,7 @@
     </Compile>
     <Compile Include="Models\EnumData.cs" />
     <Compile Include="Models\IdObjectData.cs" />
+    <Compile Include="Models\Validation\MinValidation.cs" />
     <Compile Include="Models\Users\UserData.cs" />
     <Compile Include="Models\Users\UserModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

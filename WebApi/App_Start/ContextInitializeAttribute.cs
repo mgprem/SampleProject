@@ -25,24 +25,9 @@ namespace WebApi.App_Start
                 {
                     return;
                 }
-                try
-                {
-                    session.SaveChanges();
-                }
-                catch (ConcurrencyException ex)
-                {
-                    var errorDetails = new
-                    {
-                        success = false,
-                        message = "The record with the same ID already exists.",
-                        exception = ex.Message
-                    };
 
-                    actionExecutedContext.Response = actionExecutedContext.Request.CreateResponse(
-                        HttpStatusCode.OK,
-                        errorDetails
-                    );
-                }
+                    session.SaveChanges();
+
             }
         }
     }

@@ -25,6 +25,11 @@ namespace WebApi.Controllers
         {
             return ControllerContext.Request.CreateResponse(HttpStatusCode.BadRequest, errMsg);
         }
+        public HttpResponseMessage AlreadyExists(string Msg)
+        {
+            return ControllerContext.Request.CreateResponse(HttpStatusCode.Conflict, Msg );
+        }
+
 
     }
 }

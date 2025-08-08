@@ -30,7 +30,12 @@ namespace WebApi.Controllers
         [HttpPost]
         public HttpResponseMessage CreateUser(Guid userId, [FromBody] UserModel model)
         {
-            var user = _createUserService.Create(userId, model.Name, model.Email, model.Type, model.AnnualSalary, model.Tags);
+            var userid = _getUserService.GetUser(userId);
+            if(userid != null)
+            {
+                return AlreadyExists("Record Already Exists"); 
+            }
+            var user = _createUserService.Create(userId, model.Name, model.Email, model.Type, model.age, model.AnnualSalary, model.Tags);
             return Found(new UserData(user));
         }
 
@@ -38,32 +43,18 @@ namespace WebApi.Controllers
         [HttpPost]
         public HttpResponseMessage UpdateUser(Guid userId, [FromBody] UserModel model)
         {
-
-            var errors = new List<string>();
-
-            if (string.IsNullOrWhiteSpace(model.Email))
-                errors.Add("Email is required.");
-
-            if (!model.AnnualSalary.HasValue || model.AnnualSalary <= 0)
-                errors.Add("Annual Salary must be provided and greater than zero.");
-
-            if (model.Tags == null || !model.Tags.Any())
-                errors.Add("At least one tag must be provided.");
-
-            if (errors.Any())
+            if (!ModelState.IsValid)
             {
-                string errMsg = string.Join(" | ", errors);
-                return RequestBad(errMsg);
+                var response = Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
+                return response;
             }
-                
-
 
             var user = _getUserService.GetUser(userId);
             if (user == null)
             {
                 return DoesNotExist();
             }
-            _updateUserService.Update(user, model.Name, model.Email, model.Type, model.AnnualSalary, model.Tags);
+            _updateUserService.Update(user, model.Name, model.Email, model.Type, model.age, model.AnnualSalary, model.Tags);
             return Found(new UserData(user));
         }
 

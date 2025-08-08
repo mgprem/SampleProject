@@ -87,6 +87,7 @@ namespace WebApi.Controllers
         public Guid Id { get; set; }
         public string OrderNumber { get; set; }
         public DateTime OrderDate { get; set; }
+        public List<ProductModel> Products { get; set; } = new List<ProductModel>();
         public decimal TotalAmount { get; set; }
     }
 }
