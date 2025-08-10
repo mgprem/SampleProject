@@ -280,7 +280,7 @@
 					"name": "Products",
 					"item": [
 						{
-							"name": "Create Product",
+							"name": "Create Prod",
 							"request": {
 								"method": "GET",
 								"header": []
@@ -288,7 +288,7 @@
 							"response": []
 						},
 						{
-							"name": "Update Product",
+							"name": "GetProdByID",
 							"request": {
 								"method": "GET",
 								"header": []
@@ -296,7 +296,39 @@
 							"response": []
 						},
 						{
-							"name": "GetProductById",
+							"name": "Update Prod",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Prod",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetProdList",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetProdList_NameFilter",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetProdList_NameAndPrice",
 							"request": {
 								"method": "GET",
 								"header": []
@@ -310,14 +342,6 @@
 								"header": []
 							},
 							"response": []
-						},
-						{
-							"name": "Delete Product",
-							"request": {
-								"method": "GET",
-								"header": []
-							},
-							"response": []
 						}
 					]
 				},
@@ -325,23 +349,7 @@
 					"name": "Orders",
 					"item": [
 						{
-							"name": "Create Order",
-							"request": {
-								"method": "GET",
-								"header": []
-							},
-							"response": []
-						},
-						{
-							"name": "Update Product",
-							"request": {
-								"method": "GET",
-								"header": []
-							},
-							"response": []
-						},
-						{
-							"name": "GetOrderById",
+							"name": "Create Orders",
 							"request": {
 								"method": "GET",
 								"header": []
@@ -357,7 +365,55 @@
 							"response": []
 						},
 						{
-							"name": "Delete Product",
+							"name": "Update Orders",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Orders",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetOrderByID",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteAllOrders",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetOrdersList",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetOrdersList_DateFilter",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "GetOrdersList_Date_Order",
 							"request": {
 								"method": "GET",
 								"header": []
