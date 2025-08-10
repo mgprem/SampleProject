@@ -4,90 +4,188 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+//using BusinessEntities;
+using DomainProduct = BusinessEntities.Product;
+//using BusinessEntities;
+using Core.Services.Users;
+using ProductOrderApi;
+using WebApi.Models.Users;
+using Core.Factories;
+//using BusinessEntities;
+//using BusinessEntities;
 
 namespace WebApi.Controllers
 {
     [RoutePrefix("orders")]
-    public class OrderController : ApiController
+    public class OrderController : BaseApiController
     {
-        private static readonly Dictionary<Guid, OrderModel> _orders = new Dictionary<Guid, OrderModel>();
+        private readonly ICreateOrderService _createOrderService;
+        private readonly IDeleteOrderService _deleteOrderService;
+        private readonly IGetOrderService _getOrderService;
+        private readonly IUpdateOrderService _updateOrderService;
 
-        [HttpPost]
-        [Route("{id:guid}/create")]
-        public HttpResponseMessage Create(Guid id, [FromBody] OrderModel model)
+        public OrderController(ICreateOrderService createOrderService, IDeleteOrderService deleteOrderService, IGetOrderService getOrderService, IUpdateOrderService updateOrderService
+            )
         {
-            if (_orders.ContainsKey(id))
-            {
-                return Request.CreateResponse(HttpStatusCode.Conflict, "Record already exists.");
-            }
-                model.Id = id;
-                _orders[id] = model;
-
-            return Request.CreateResponse(HttpStatusCode.OK, model);
+            _createOrderService = createOrderService;
+            _deleteOrderService = deleteOrderService;
+            _getOrderService = getOrderService;
+            _updateOrderService = updateOrderService;
         }
 
+        [Route("{OrderId:guid}/create")]
         [HttpPost]
-        [Route("{id:guid}/update")]
-        public HttpResponseMessage Update(Guid id, [FromBody] OrderModel model)
+        public HttpResponseMessage CreateOrder(Guid OrderId, [FromBody] Order model)
         {
-
-                if (!_orders.ContainsKey(id))
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "Order not found.");
-
-                model.Id = id;
-                _orders[id] = model;
-
-            return Request.CreateResponse(HttpStatusCode.OK, model);
-        }
-
-        [HttpDelete]
-        [Route("{id:guid}/delete")]
-        public HttpResponseMessage Delete(Guid id)
-        {
-
-            if (_orders.ContainsKey(id))
+            var Orderid = _getOrderService.GetOrderById(OrderId);
+            if (Orderid != null)
             {
-                _orders.Remove(id);
-                return Request.CreateResponse(HttpStatusCode.OK, "Deleted successfully.");
+                return AlreadyExists("Record Already Exists");
             }
 
+            // Map API products to domain products
+            var domainProducts = MapToDomainProducts(model.Products);
 
-            return Request.CreateResponse(HttpStatusCode.NotFound, "Order not found.");
+            var Order = _createOrderService.Create(OrderId, model.OrderDate, domainProducts);
+            return Found(new OrderData(Order));
         }
 
-        [HttpGet]
-        [Route("{id:guid}")]
-        public HttpResponseMessage GetById(Guid id)
+
+       
+        [Route("{OrderId:guid}/update")]
+        [HttpPut]
+        public HttpResponseMessage UpdateOrder(Guid OrderId, [FromBody] Order model)
         {
-            OrderModel order;
+            if (model == null)
+                return RequestBad("Order payload is required.");
 
-                _orders.TryGetValue(id, out order);
+            if (!ModelState.IsValid)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
+            }
 
-
-            if (order != null)
-                return Request.CreateResponse(HttpStatusCode.OK, order);
-
-            return Request.CreateResponse(HttpStatusCode.NotFound, "Order not found.");
+            var Order = _getOrderService.GetOrderById(OrderId);
+            if (Order == null)
+            {
+                return DoesNotExist();
+            }
+            var domainProducts = MapProductsForUpdate(model.Products, Order.Products);
+            _updateOrderService.Update(Order, model.OrderDate, domainProducts);
+            return Found(new OrderData(Order));
         }
 
+     
+                [Route("{OrderId:guid}/delete")]
+                [HttpDelete]
+                public HttpResponseMessage DeleteOrder(Guid OrderId)
+                {
+                    var Order = _getOrderService.GetOrderById(OrderId);
+                    if (Order == null)
+                    {
+                        return DoesNotExist();
+                    }
+                    _deleteOrderService.Delete(Order);
+                    return Found();
+                }
+   
+                [Route("{OrderId:guid}")]
+                [HttpGet]
+                public HttpResponseMessage GetOrder(Guid OrderId)
+                {
+                    var Order = _getOrderService.GetOrderById(OrderId);
+                    if (Order == null)
+                    {
+                        return DoesNotExist();
+                    }
+                    return Found(new OrderData(Order));
+                }
+        [Route("AllOrders")]
         [HttpGet]
+        public HttpResponseMessage GetAllOrders()
+        {
+            var Orders = _getOrderService.GetAllOrders()
+                                       .Select(q => new OrderData(q))
+                                       .ToList();
+
+            return Found(Orders);
+        }
+
         [Route("list")]
-        public HttpResponseMessage GetAll()
+        [HttpGet]
+        public HttpResponseMessage GetOrders(int skip, int take, [FromBody] Order model, DateTime? orderDate = null)
         {
-            List<OrderModel> orderList;
+            //if ((orderDate.HasValue) && (model != null))
+            //{
 
-                orderList = _orders.Values.ToList();
+            var domainProducts = new List<DomainProduct>();
 
-            return Request.CreateResponse(HttpStatusCode.OK, orderList);
+            if (model != null && model.Products != null && model.Products.Count > 0)
+            {
+                if (model.Id != Guid.Empty)
+                {
+                    var Order = _getOrderService.GetOrderById(model.Id);
+                    if (Order == null)
+                    {
+                        return DoesNotExist();
+                    }
+
+                    domainProducts = MapProductsForUpdate(model.Products, Order?.Products);
+                }
+            }
+            
+
+                var Orders = _getOrderService.GetOrders(orderDate, domainProducts)
+                                         .Skip(skip).Take(take)
+                                         .Select(q => new OrderData(q))
+                                         .ToList();
+
+                return Found(Orders);
+            //}
         }
-    }
 
-    public class OrderModel
-    {
-        public Guid Id { get; set; }
-        public string OrderNumber { get; set; }
-        public DateTime OrderDate { get; set; }
-        public List<ProductModel> Products { get; set; } = new List<ProductModel>();
-        public decimal TotalAmount { get; set; }
+        [Route("clear")]
+        [HttpDelete]
+        public HttpResponseMessage DeleteAllOrders()
+        {
+            _deleteOrderService.DeleteAll();
+            return Found();
+        }
+        private static List<DomainProduct> MapToDomainProducts(List<ProductOrderApi.Product> apiProducts)
+        {
+            var result = new List<DomainProduct>();
+            if (apiProducts == null) return result;
+
+            foreach (var p in apiProducts)
+            {
+                var dp = new DomainProduct();
+                dp.SetName(p.Name);
+                dp.SetPrice(p.Price);
+                result.Add(dp);
+
+            }
+            return result;
+        }
+        private List<DomainProduct> MapProductsForUpdate(IList<ProductOrderApi.Product> incoming, IEnumerable<DomainProduct> existing)
+        {
+            var results = new List<DomainProduct>();
+            var existingById = (existing ?? new List<DomainProduct>()).ToDictionary(p => p.Id);
+
+            foreach (var p in incoming ?? new List<ProductOrderApi.Product>())
+            {
+                if (p == null) continue;
+
+                // If the product already exists in the order, update IN PLACE
+                DomainProduct target;
+                if (p.Id != Guid.Empty && existingById.TryGetValue(p.Id, out target))
+                {
+                    target.SetName(p.Name);
+                    target.SetPrice(p.Price);
+                    results.Add(target);
+                }
+            }
+
+            return results;
+        }
+
     }
 }

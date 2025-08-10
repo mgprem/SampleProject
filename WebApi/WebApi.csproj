@@ -181,6 +181,10 @@
     </Compile>
     <Compile Include="Models\EnumData.cs" />
     <Compile Include="Models\IdObjectData.cs" />
+    <Compile Include="Models\Order\OrderModel.cs" />
+    <Compile Include="Models\Order\OrderData.cs" />
+    <Compile Include="Models\Product\ProductModel.cs" />
+    <Compile Include="Models\Product\ProductData.cs" />
     <Compile Include="Models\Validation\MinValidation.cs" />
     <Compile Include="Models\Users\UserData.cs" />
     <Compile Include="Models\Users\UserModel.cs" />

@@ -4,85 +4,114 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+//using BusinessEntities;
+using Core.Services.Users;
+using ProductOrderApi;
+using WebApi.Models.Users;
 
 namespace WebApi.Controllers
 {
     [RoutePrefix("products")]
-    public class ProductController : ApiController
+    public class ProductController : BaseApiController
     {
-        private static readonly Dictionary<Guid, ProductModel> _products = new Dictionary<Guid, ProductModel>();
+        private readonly ICreateProductService _createProductService;
+        private readonly IDeleteProductService _deleteProductService;
+        private readonly IGetProductService _getProductService;
+        private readonly IUpdateProductService _updateProductService;
 
-
-        [HttpPost]
-        [Route("{id:guid}/create")]
-        public HttpResponseMessage Create(Guid id, [FromBody] ProductModel model)
+        public ProductController(ICreateProductService createProductService, IDeleteProductService deleteProductService, IGetProductService getProductService, IUpdateProductService updateProductService)
         {
+            _createProductService = createProductService;
+            _deleteProductService = deleteProductService;
+            _getProductService = getProductService;
+            _updateProductService = updateProductService;
+        }
 
-            if (_products.ContainsKey(id))
+        [Route("{productId:guid}/create")]
+        [HttpPost]
+        public HttpResponseMessage CreateProduct(Guid ProductId, [FromBody] Product model)
+        {
+            var Productid = _getProductService.GetProductById(ProductId);
+            if(Productid != null)
             {
-                return Request.CreateResponse(HttpStatusCode.Conflict, "Record already exists.");
+                return AlreadyExists("Record Already Exists"); 
             }
-            model.Id = id;
-                _products[id] = model;
-            return Request.CreateResponse(HttpStatusCode.OK, model);
+            var product = _createProductService.Create(ProductId, model.Name, model.Price);
+            return Found(new ProductData(product));
         }
 
-        [HttpPost]
-        [Route("{id:guid}/update")]
-        public HttpResponseMessage Update(Guid id, [FromBody] ProductModel model)
+        [Route("{ProductId:guid}/update")]
+        [HttpPut]
+        public HttpResponseMessage UpdateProduct(Guid ProductId, [FromBody] Product model)
         {
+            if (!ModelState.IsValid)
+            {
+                var response = Request.CreateResponse(HttpStatusCode.BadRequest, ModelState);
+                return response;
+            }
 
-                if (!_products.ContainsKey(id))
-                    return Request.CreateResponse(HttpStatusCode.NotFound, "Product not found.");
-
-                model.Id = id;
-                _products[id] = model;
-
-            return Request.CreateResponse(HttpStatusCode.OK, model);
+            var Product = _getProductService.GetProductById(ProductId);
+            if (Product == null)
+            {
+                return DoesNotExist();
+            }
+            _updateProductService.Update(Product, model.Name, model.Price);
+            return Found(new ProductData(Product));
         }
 
+        [Route("{ProductId:guid}/delete")]
         [HttpDelete]
-        [Route("{id:guid}/delete")]
-        public HttpResponseMessage Delete(Guid id)
+        public HttpResponseMessage DeleteProduct(Guid ProductId)
         {
-                if (_products.ContainsKey(id))
-                {
-                    _products.Remove(id);
-                    return Request.CreateResponse(HttpStatusCode.OK, "Deleted successfully.");
-                }
-            return Request.CreateResponse(HttpStatusCode.NotFound, "Product not found.");
+            var Product = _getProductService.GetProductById(ProductId);
+            if (Product == null)
+            {
+                return DoesNotExist();
+            }
+            _deleteProductService.Delete(Product);
+            return Found();
         }
 
+        [Route("{ProductId:guid}")]
         [HttpGet]
-        [Route("{id:guid}")]
-        public HttpResponseMessage GetById(Guid id)
+        public HttpResponseMessage GetProduct(Guid ProductId)
         {
-            ProductModel product;
+            var Product = _getProductService.GetProductById(ProductId);
+            if (Product == null)
+            {
+                return DoesNotExist();
+            }
+            return Found(new ProductData(Product));
+        }
+        [Route("AllProducts")]
+        [HttpGet]
+        public HttpResponseMessage GetAllProducts()
+        {
+            var Products = _getProductService.GetAllProduct()
+                                       .Select(q => new ProductData(q))
+                                       .ToList();
 
-                _products.TryGetValue(id, out product);
-
-            if (product != null)
-                return Request.CreateResponse(HttpStatusCode.OK, product);
-
-            return Request.CreateResponse(HttpStatusCode.NotFound, "Product not found.");
+            return Found(Products);
         }
 
-        [HttpGet]
         [Route("list")]
-        public HttpResponseMessage GetAll()
+        [HttpGet]
+        public HttpResponseMessage GetProducts(int skip, int take,  string name = null, decimal? price = null)
         {
-            List<ProductModel> productList;
-
-                productList = _products.Values.ToList();
-
-            return Request.CreateResponse(HttpStatusCode.OK, productList);
+            var Products = _getProductService.GetProducts( name, price)
+                                       .Skip(skip).Take(take)
+                                       .Select(q => new ProductData(q))
+                                       .ToList();
+            return Found(Products);
         }
-    }
 
-    public class ProductModel
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public decimal Price { get; set; }
+        [Route("clear")]
+        [HttpDelete]
+        public HttpResponseMessage DeleteAllProducts()
+        {
+            _deleteProductService.DeleteAll();
+            return Found();
+        }
+
     }
 }
